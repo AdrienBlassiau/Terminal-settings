@@ -1,0 +1,126 @@
+#!/bin/bash
+#
+#	Adrien
+#	Blassiau
+#	01/10/2018
+#
+#	Basic functions for git integration on bash
+
+
+safe_print() {
+	if [ -n "$1" ]
+    	then
+    	if [ $1 != 0 ]
+    	then
+    		echo -e $2
+        fi
+	fi
+}
+
+parse_git_unstaged() {
+	res=$(git status -s 2>/dev/null | grep "^ [A|R|M|D|C] *" | wc -l)
+    safe_print $res "$2$1$3$res"
+}
+
+parse_git_staged() {
+    res=$(git status -s 2>/dev/null | grep "^[A|R|M|D|C]  *" | wc -l)
+    safe_print $res "$2$1$3$res"
+}
+
+parse_git_untracked() {
+	res=$(git status -s 2>/dev/null | grep "^?? *" | wc -l)
+    safe_print $res "$2$1$3$res"
+}
+
+parse_git_merge_conflict() {
+	res=$(git status -s 2>/dev/null | grep "^[D|A|U][D|A|U] *" | wc -l)
+    safe_print $res "$2$1$3$res"
+}
+
+parse_git_branch() {
+    res=$(git branch 2>/dev/null | grep "^*" | colrm 1 2)
+    if [ -z $res ]
+    then
+    	echo ""
+    else
+    	echo -e "$1$res$2"
+    fi
+}
+
+parse_git_stashed() {
+    res=$(git stash list 2>/dev/null | wc -l)
+    safe_print $res "$2 $1$3$res"
+}
+
+parse_git_behind_ahead() {
+    res=$(git rev-list --left-right --count origin/master...${parse_git_branch} 2>/dev/null )
+    behind=$(echo $res | awk '{print $1}')
+    ahead=$(echo $res | awk '{print $2}')
+    safe_print $ahead "$2 $1$5$ahead"
+    safe_print $behind "$4 $3$5$behind"
+}
+
+local_status_part() {
+	#symboles
+	bullet="•"
+	excla="!"
+	cross="✕"
+	check="✓"
+	plus="+"
+	#couleurs
+	NONE="\033[0m"    # aucune
+	vert="\e[1m\033[38;2;125;206;130m"
+	orange="\e[1m\033[38;2;255;131;96m"
+	jaune="\e[1m\033[38;2;232;226;136m"
+	bleu="\e[1m\033[38;2;60;219;211m"
+	vert_flash="\e[1m\033[38;2;5;241;64m"
+	#infos
+	staged=$(parse_git_staged $bullet $vert $NONE)
+	unstaged=$(parse_git_unstaged $plus $orange $NONE)
+	untracked=$(parse_git_untracked $excla $jaune $NONE)
+	merge_conflict=$(parse_git_merge_conflict $cross $bleu $NONE)
+	if [ -z $staged ] && [ -z $unstaged ] && [ -z $untracked ] && [ -z $merge_conflict ]
+	then
+		echo -e "$vert_flash$check${NONE}"
+	else
+		echo -e "$staged$unstaged$untracked$merge_conflict"
+	fi
+}
+
+branch_status_part() {
+	#symboles
+	arrow_up="▴"
+	arrow_down="▾"
+	flag="$"
+	#couleurs
+	NONE="\033[0m"    # aucune
+	rose="\e[1m\033[38;2;231;29;54m"
+	vert="\e[1m\033[38;2;48;115;81m"
+	rouge="\e[1m\033[38;2;112;22;60m"
+	#infos
+	branch_test=$(parse_git_branch  $rose $NONE)
+
+    if [ "${branch_test}" != "" ]
+	then
+		stashed_test=$(parse_git_stashed  $flag $rouge $NONE)
+	    behind_ahead_test=$(parse_git_behind_ahead  $arrow_up $vert $arrow_down $rouge $NONE)
+		echo -e "$branch_test$stashed_test$behind_ahead_test"
+	else
+		echo ""
+	fi
+}
+
+display_git_info() {
+	branch_status=$(branch_status_part)
+	local_status=$(local_status_part)
+
+	NONE="\033[0m"
+	orange="\033[38;2;242;114;66m"
+
+	if [ "${branch_status}" != "" ]
+	then
+		echo -e "$orange - ${NONE}[ $branch_status | $local_status ]"
+    else
+    	echo ""
+	fi
+}
