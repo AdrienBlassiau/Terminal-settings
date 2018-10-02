@@ -6,3 +6,5 @@ On your .bashrc (or .zshrc), put this lines :
     orange="\[\033[38;2;242;114;66m\]"
 
     PS1="$orange\u${NONE}@$orange\h$
+
+<img src = "./img/ex.png" title = "ex" alt = "ex">
