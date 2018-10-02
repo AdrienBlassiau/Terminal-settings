@@ -7,4 +7,4 @@ On your .bashrc (or .zshrc), put this lines :
 
     PS1="$orange\u${NONE}@$orange\h$
 
-<img src = "./img/ex.png" title = "ex" alt = "ex">
+<img src = "./img/exemple.png" title = "ex" alt = "ex">
